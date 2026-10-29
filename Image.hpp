@@ -11,10 +11,10 @@
 template <typename T>
 class Image {
 private:
+    static constexpr double EPSILON = 1e-5;
     size_t width_;
     size_t height_;
     T* data_;
-
 
     T safeAdd(T a, T b) const {
         if constexpr (std::is_same_v<T, bool>) {
@@ -43,7 +43,7 @@ public:
     explicit Image(size_t width = 0, size_t height = 0, bool randomFill = false)
         : width_(width), height_(height), data_(nullptr) {
         if (width_ > 0 && height_ > 0) {
-            data_ = new T[width_ * height_](); 
+            data_ = new T[width_ * height_]();
             if (randomFill) {
                 std::random_device rd;
                 std::mt19937 gen(rd());
@@ -70,7 +70,6 @@ public:
         }
     }
 
-
     Image& operator=(const Image& other) {
         if (this != &other) {
             T* newData = nullptr;
@@ -91,7 +90,6 @@ public:
     size_t getWidth() const { return width_; }
     size_t getHeight() const { return height_; }
 
-
     T& operator()(size_t row, size_t col) {
         if (row >= height_ || col >= width_) throw std::out_of_range("Image index out of bounds");
         return data_[row * width_ + col];
@@ -102,7 +100,23 @@ public:
         return data_[row * width_ + col];
     }
 
- 
+    bool operator==(const Image& other) const {
+        if (width_ != other.width_ || height_ != other.height_) return false;
+        for (size_t i = 0; i < width_ * height_; ++i) {
+            if constexpr (std::is_floating_point_v<T>) {
+                if (std::abs(data_[i] - other.data_[i]) > EPSILON) return false;
+            }
+            else {
+                if (data_[i] != other.data_[i]) return false;
+            }
+        }
+        return true;
+    }
+
+    bool operator!=(const Image& other) const {
+        return !(*this == other);
+    }
+
     Image operator*(const Image& other) const {
         size_t resW = std::max(width_, other.width_);
         size_t resH = std::max(height_, other.height_);
@@ -116,7 +130,6 @@ public:
         }
         return result;
     }
-
 
     Image operator+(const Image& other) const {
         size_t resW = std::max(width_, other.width_);
@@ -132,7 +145,6 @@ public:
         return result;
     }
 
-
     Image operator*(T val) const {
         Image result(width_, height_, false);
         for (size_t i = 0; i < width_ * height_; ++i) {
@@ -141,7 +153,6 @@ public:
         return result;
     }
 
-
     Image operator+(T val) const {
         Image result(width_, height_, false);
         for (size_t i = 0; i < width_ * height_; ++i) {
@@ -149,7 +160,6 @@ public:
         }
         return result;
     }
-
 
     Image operator!() const {
         Image result(width_, height_, false);
@@ -178,7 +188,7 @@ public:
         for (size_t r = 0; r < img.height_; ++r) {
             for (size_t c = 0; c < img.width_; ++c) {
                 if constexpr (std::is_same_v<T, char> || std::is_same_v<T, unsigned char>) {
-                    os << static_cast<int>(img(r, c)) << "\t"; 
+                    os << static_cast<int>(img(r, c)) << "\t";
                 }
                 else if constexpr (std::is_same_v<T, bool>) {
                     os << (img(r, c) ? "1" : "0") << "\t";
@@ -199,7 +209,6 @@ Image<T> operator+(T val, const Image<T>& img) { return img + val; }
 template <typename T>
 Image<T> operator*(T val, const Image<T>& img) { return img * val; }
 
-
 template <typename T>
 void drawFilledCircle(Image<T>& img, int centerX, int centerY, int radius, T fillValue) {
     if (radius < 0) throw std::invalid_argument("Radius cannot be negative");
@@ -218,4 +227,4 @@ void drawFilledCircle(Image<T>& img, int centerX, int centerY, int radius, T fil
     }
 }
 
-#endif 
+#endif
